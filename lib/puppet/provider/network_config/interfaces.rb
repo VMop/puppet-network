@@ -1,4 +1,9 @@
-require 'puppetx/filemapper'
+begin
+  require 'puppetx/filemapper'
+rescue LoadError
+  mod = Puppet::Module.find('filemapper', Puppet[:environment].to_s)
+  require File.join mod.path, 'lib/puppetx/filemapper'
+end
 
 Puppet::Type.type(:network_config).provide(:interfaces) do
   # Debian network_config interfaces provider.

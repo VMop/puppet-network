@@ -1,4 +1,9 @@
-require 'puppet/property/boolean'
+begin
+  require 'puppet/property/boolean'
+rescue LoadError
+  vmware_module = Puppet::Module.find('boolean', Puppet[:environment].to_s)
+  require File.join vmware_module.path, 'lib/puppet/property/boolean'
+end
 
 Puppet::Type.newtype(:network_config) do
   @doc = "Manage non-volatile network configuration information"
