@@ -1,48 +1,36 @@
-require 'rake'
-require 'yaml'
-require 'rspec/core/rake_task'
+require 'rubygems'
+require 'puppetlabs_spec_helper/rake_tasks'
 
-def fixtures(category)
-  root = File.dirname(__FILE__)
-  yaml = YAML.load_file(File.expand_path('.fixtures.yml', root))
-
-  fixtures = yaml["fixtures"]
-
-  if fixtures.nil?
-    raise ".fixtures.yml contained no top level 'fixtures' key"
-  end
-
-  fixtures[category] || {}
-rescue => e
-  raise e, "Could not load fixture data: #{e}"
-end
-
-namespace :fixture do
-
-  desc "Prepare all fixture repositories"
-  task :prepare do
-    fixtures("repositories").each_pair do |name, remote|
-      fixture_target = "spec/fixtures/modules/#{name}"
-      sh "git clone '#{remote}' '#{fixture_target}'" unless File.exist? fixture_target
-    end
-  end
-
-  desc "Remove all fixture repositories"
-  task :remove do
-    fixtures["repositories"].each_pair do |name, remote|
-      fixture_target = "spec/fixtures/modules/#{name}"
-      FileUtils.rm_rf fixture_target if File.exist? fixture_target
+def io_popen(command)
+  IO.popen(command) do |io|
+    io.each do |line|
+      print line
+      yield line if block_given?
     end
   end
 end
 
-desc "Run spec tests on an existing fixtures directory"
-RSpec::Core::RakeTask.new(:spec) do |t|
-  t.rspec_opts = ['--color']
-  t.pattern = 'spec/{classes,defines,unit,functions,hosts}/**/*_spec.rb'
+# Customize lint option
+task :lint do
+  PuppetLint.configuration.send("disable_80chars")
+  PuppetLint.configuration.send("disable_class_parameter_defaults")
 end
 
-desc "Display the list of available rake tasks"
-task :help do
-  system("rake -T")
+# Initialize vagrant instance for testing
+task :vagrant, :manifest do |t, args|
+  Rake::Task["spec_prep"].execute
+
+  prefix = "VAGRANT_MANIFEST='#{args[:manifest]||'init.pp'}'"
+
+  provision = false
+  io_popen("export #{prefix}; vagrant up --provider=vmware_fusion") do |line|
+    provision = true if line =~ /Machine is already running./
+  end
+  io_popen("export #{prefix}; vagrant provision") if provision
+end
+
+# Cleanup vagrant environment
+task :vagrant_clean do
+  `vagrant destroy`
+  Rake::Task["spec_clean"].execute
 end

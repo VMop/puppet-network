@@ -1,25 +1,27 @@
-source 'https://rubygems.org'
+source "https://rubygems.org"
 
-def location_for(place, fake_version = nil)
-  if place =~ /^(git:[^#]*)#(.*)/
-    [fake_version, { :git => $1, :branch => $2, :require => false }].compact
-  elsif place =~ /^file:\/\/(.*)/
-    ['>= 0', { :path => File.expand_path($1), :require => false }]
-  else
-    [place, { :require => false }]
-  end
+group :development, :test do
+  gem 'rake'
+  gem 'rspec', "~> 2.11.0", :require => false
+  gem 'mocha', "~> 0.10.5", :require => false
+  gem 'puppetlabs_spec_helper', :require => false
+  gem 'rspec-puppet', :require => false
+  gem 'puppet-lint'
 end
 
-gem 'puppet', *location_for(ENV['PUPPET_VERSION'], '>= 2.7.0')
-gem 'facter', '>= 1.6.2'
+facterversion = ENV['GEM_FACTER_VERSION']
+if facterversion
+  gem 'facter', *location_for(facterversion)
+else
+  gem 'facter', :require => false
+end
 
-group :test, :development do
-  gem 'rspec', '~> 2.10.0'
-  gem 'mocha', '~> 0.10.5'
-  gem 'rspec-puppet',
-    :git => 'https://github.com/adrienthebo/rspec-puppet',
-    :ref => 'recursive_param_compare'
-  gem 'rake'
+ENV['GEM_PUPPET_VERSION'] ||= ENV['PUPPET_GEM_VERSION']
+puppetversion = ENV['GEM_PUPPET_VERSION']
+if puppetversion
+  gem 'puppet', *location_for(puppetversion)
+else
+  gem 'puppet', :require => false
 end
 
 if File.exists? "#{__FILE__}.local"
