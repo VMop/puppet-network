@@ -119,7 +119,8 @@
 #
 # == See also
 #
-# * Linux Ethernet Bonding Driver HOWTO, Section 2 "Bonding Driver Options" http://www.kernel.org/doc/Documentation/networking/bonding.txt
+# * Linux Ethernet Bonding Driver HOWTO, Section 2 "Bonding Driver Options"
+#   http://www.kernel.org/doc/Documentation/networking/bonding.txt
 #
 define network::bond(
   $slaves,
@@ -130,34 +131,33 @@ define network::bond(
   $family    = undef,
   $onboot    = undef,
 
-  $mode             = "active-backup",
-  $miimon           = "100",
-  $downdelay        = "200",
-  $updelay          = "200",
-  $lacp_rate        = "slow",
+  $mode             = 'active-backup',
+  $miimon           = '100',
+  $downdelay        = '200',
+  $updelay          = '200',
+  $lacp_rate        = 'slow',
   $primary          = $slaves[0],
-  $primary_reselect = "always",
-  $xmit_hash_policy = "layer2",
+  $primary_reselect = 'always',
+  $xmit_hash_policy = 'layer2',
 ) {
 
   require network::bond::setup
 
   kmod::alias { $name:
-    source => 'bonding',
     ensure => $ensure,
+    source => 'bonding',
   }
 
   case $::osfamily {
     Debian: {
       network::bond::debian { $name:
-        slaves    => $slaves,
-        ensure    => $ensure,
-        ipaddress => $ipaddress,
-        netmask   => $netmask,
-        method    => $method,
-        family    => $family,
-        onboot    => $onboot,
-
+        ensure           => $ensure,
+        slaves           => $slaves,
+        ipaddress        => $ipaddress,
+        netmask          => $netmask,
+        method           => $method,
+        family           => $family,
+        onboot           => $onboot,
         mode             => $mode,
         miimon           => $miimon,
         downdelay        => $downdelay,
@@ -166,20 +166,18 @@ define network::bond(
         primary          => $primary,
         primary_reselect => $primary_reselect,
         xmit_hash_policy => $xmit_hash_policy,
-
-        require   => Kmod::Alias[$name],
+        require          => Kmod::Alias[$name],
       }
     }
     RedHat: {
       network::bond::redhat { $name:
-        slaves    => $slaves,
-        ensure    => $ensure,
-        ipaddress => $ipaddress,
-        netmask   => $netmask,
-        family    => $family,
-        method    => $method,
-        onboot    => $onboot,
-
+        ensure           => $ensure,
+        slaves           => $slaves,
+        ipaddress        => $ipaddress,
+        netmask          => $netmask,
+        family           => $family,
+        method           => $method,
+        onboot           => $onboot,
         mode             => $mode,
         miimon           => $miimon,
         downdelay        => $downdelay,
@@ -188,12 +186,11 @@ define network::bond(
         primary          => $primary,
         primary_reselect => $primary_reselect,
         xmit_hash_policy => $xmit_hash_policy,
-
-        require   => Kmod::Alias[$name],
+        require          => Kmod::Alias[$name],
       }
     }
     default: {
-      fail("network::bond does not support osfamily '${::osfamily}'")
+      fail("network::bond does not support osfamily ${::osfamily}")
     }
   }
 }
